@@ -6,17 +6,36 @@ const Chatbot = () => {
   const [messages, setMessages] = useState([{ text: "Hello! How can I assist you today?", from: "bot" }]);
   const [input, setInput] = useState('');
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (input.trim()) {
       setMessages([...messages, { text: input, from: 'user' }]);
       setInput('');
-      setTimeout(() => {
+
+      try {
+        // Envoi du message à l'API du chatbot
+        const response = await fetch('/api/chatbot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: input }),
+        });
+
+        const data = await response.json();
+
+        // Ajout de la réponse du bot aux messages
         setMessages((prevMessages) => [
           ...prevMessages,
-          { text: 'This is an automated response...', from: 'bot' },
+          { text: data.botResponse, from: 'bot' },
         ]);
-      }, 1000);
+      } catch (error) {
+        console.error('Error while fetching the chatbot response:', error);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: 'Sorry, something went wrong...', from: 'bot' },
+        ]);
+      }
     }
   };
 
