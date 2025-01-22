@@ -1,15 +1,15 @@
+// Exemple de route API pour le chatbot dans Next.js (Vercel)
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  // Autoriser les requêtes CORS de ton portfolio
-  const response = NextResponse.json({
-    botResponse: "Message reçu. Comment puis-je vous aider ?",
-  });
+  // Si la variable 'request' n'est pas utilisée, tu peux la retirer.
+  // Si tu veux utiliser les données envoyées dans la requête, tu peux faire un traitement ici.
 
-  // Définir les en-têtes CORS
-  response.headers.set('Access-Control-Allow-Origin', 'https://badreddineek.github.io/Portfolio/index.html#');  // Remplace par ton URL de portfolio
-  response.headers.set('Access-Control-Allow-Methods', 'POST');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-  
-  return response;
+  const { message } = await request.json(); // Récupère le message de l'utilisateur depuis la requête
+
+  // Traitement de la logique du chatbot (par exemple, générer une réponse)
+  const botResponse = `Bot réponse à: ${message}`;
+
+  // Retourne la réponse sous forme JSON
+  return NextResponse.json({ botResponse });
 }
