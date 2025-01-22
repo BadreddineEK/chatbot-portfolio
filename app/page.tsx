@@ -1,3 +1,5 @@
+'use client'; // Cette ligne indique à Next.js que ce fichier utilise des hooks React
+
 import React, { useState } from 'react';
 
 const Chatbot = () => {
