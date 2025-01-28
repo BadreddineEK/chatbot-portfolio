@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 const Chatbot = () => {
-  const [messages, setMessages] = useState([{ text: "Hello! How can I assist you today?", from: "bot" }]);
+  const [messages, setMessages] = useState([{ text: "Salut! Désolé pour l'instant je suis encore en cours de dévéloppement", from: "bot" }]);
   const [input, setInput] = useState('');
 
   const handleSubmit = async (event: React.FormEvent) => {
