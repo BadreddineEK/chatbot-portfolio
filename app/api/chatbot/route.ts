@@ -35,10 +35,10 @@ const response = await fetch('https://api-inference.huggingface.co/models/distil
   const data = await response.json(); // Récupère la réponse du modèle Hugging Face
 
     // On vérifie si la réponse contient 'choices' ou 'generated_text'
-    const botResponse = data?.choices?.[0]?.text || data?.generated_text || 'Désolé, je n\'ai pas compris votre question.';
+    //const botResponse = data?.choices?.[0]?.text || data?.generated_text || 'Désolé, je n\'ai pas compris votre question.';
 
     // Retourne la réponse générée par le modèle
-    return NextResponse.json({ botResponse });
+    //return NextResponse.json({ botResponse });
   } catch (error) {
     // Gestion d'erreur en cas de problème avec l'API Hugging Face
     console.error(error);
