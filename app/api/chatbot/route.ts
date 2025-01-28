@@ -32,7 +32,6 @@ const response = await fetch('https://api-inference.huggingface.co/models/distil
     throw new Error('Erreur de connexion à l\'API Hugging Face');
   }
   
-  const data = await response.json(); // Récupère la réponse du modèle Hugging Face
 
     // On vérifie si la réponse contient 'choices' ou 'generated_text'
     //const botResponse = data?.choices?.[0]?.text || data?.generated_text || 'Désolé, je n\'ai pas compris votre question.';
