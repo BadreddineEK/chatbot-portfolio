@@ -1,4 +1,4 @@
-# 🤖 Chatbot Portfolio — Badreddine EL KHAMLICHI
+# Chatbot Portfolio — Badreddine EL KHAMLICHI
 
 > A conversational portfolio powered by AI. Ask me anything about my background, skills, and projects — in French or English.
 
@@ -11,12 +11,12 @@
 This is my **AI-powered portfolio chatbot** — a digital twin of myself built with Next.js and Groq.
 Instead of a classic static portfolio, visitors can have a real conversation and ask anything:
 
-- 🎓 My education and background
-- 💼 My professional experience
-- 🛠️ My technical skills and stack
-- 📦 My projects
-- 🏃 My hobbies and interests
-- 📬 How to reach me
+- My education and background
+- My professional experience
+- My technical skills and stack
+- My projects
+- My hobbies and interests
+- How to reach me
 
 The bot answers **in the same language as the user** (French or English), in first person, as if it were me.
 
@@ -91,19 +91,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 1. Push to GitHub (already done)
 2. Import the repo on [vercel.com](https://vercel.com)
 3. Add the environment variable `GROQ_API_KEY` in **Settings → Environment Variables**
-4. Deploy — that's it ✅
+4. Deploy
 
 ---
 
 ## Features
 
-- 🌍 **Bilingual** — auto-detects French or English and replies accordingly
-- 🧠 **Contextual** — detailed system prompt covering education, work, skills, projects, hobbies
-- ⚡ **Fast** — Groq inference is near-instant (~200ms)
-- 💬 **Typing indicator** — animated dots while the bot is thinking
-- 📱 **Responsive** — works on mobile and desktop
-- 🔗 **Portfolio switcher** — quick links to classic and AI portfolio versions
-- 🔒 **Secure** — API key stays server-side, never exposed to the client
+- **Bilingual** — auto-detects French or English and replies accordingly
+- **Contextual** — detailed system prompt covering education, work, skills, projects, hobbies
+- **Fast** — Groq inference is near-instant (~200ms)
+- **Typing indicator** — animated dots while the bot is thinking
+- **Responsive** — works on mobile and desktop
+- **Portfolio switcher** — quick links to classic and AI portfolio versions
+- **Secure** — API key stays server-side, never exposed to the client
 
 ---
 
@@ -142,13 +142,12 @@ chatbot-portfolio/
 ## Author
 
 **Badreddine EL KHAMLICHI**
-Data Scientist @ Efor — mission Boehringer Ingelheim, Lyon
 
-- 🌐 [Classic Portfolio](https://badreddineek.github.io/portfolioBadreddine/)
-- 🤖 [AI Portfolio](https://badreddineek.github.io/portfolio-ai/)
-- 💻 [GitHub](https://github.com/BadreddineEK)
-- 🔗 LinkedIn: search **Badreddine EL KHAMLICHI**
+- [Classic Portfolio](https://badreddineek.github.io/portfolioBadreddine/)
+- [AI Portfolio](https://badreddineek.github.io/portfolio-ai/)
+- [GitHub](https://github.com/BadreddineEK)
+- LinkedIn: search **Badreddine EL KHAMLICHI**
 
 ---
 
-*Built with ❤️ and lots of ☕ — feel free to fork and adapt for your own portfolio!*
+*Built with Next.js and Groq — feel free to fork and adapt for your own portfolio.*
