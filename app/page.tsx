@@ -1,24 +1,28 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-// Cross-portfolio version switcher styles
+type Message = {
+  text: string;
+  from: 'bot' | 'user';
+};
+
 const switcherStyle: React.CSSProperties = {
   position: 'fixed',
   bottom: '20px',
-  right: '20px',
+  left: '20px',
   zIndex: 9999,
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'flex-end',
+  alignItems: 'flex-start',
   gap: '6px',
 };
 
 const switcherLabelStyle: React.CSSProperties = {
   fontSize: '0.65rem',
   color: 'rgba(0,0,0,0.4)',
-  textAlign: 'right',
-  paddingRight: '4px',
+  textAlign: 'left',
+  paddingLeft: '4px',
   fontFamily: 'monospace',
 };
 
@@ -52,157 +56,291 @@ const aiBtnStyle: React.CSSProperties = {
   boxShadow: '0 2px 12px rgba(15,23,42,0.3)',
 };
 
-const Chatbot = () => {
-  const [messages, setMessages] = useState([{ text: "Salut! Désolé pour l'instant je suis encore en cours de dévéloppement", from: "bot" }]);
+const INITIAL_MESSAGE: Message = {
+  text: "Salut ! 👋 Je suis Badreddine (version IA 🤖). Pose-moi des questions sur mon parcours, mes compétences ou mes projets — en français ou en anglais !",
+  from: 'bot',
+};
+
+export default function ChatbotPage() {
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (input.trim()) {
-      setMessages([...messages, { text: input, from: 'user' }]);
-      setInput('');
+    if (!input.trim() || isLoading) return;
 
-      try {
-        const response = await fetch('/api/chatbot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: input }),
-        });
-        const data = await response.json();
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { text: data.botResponse, from: 'bot' },
-        ]);
-      } catch (error) {
-        console.error('Error while fetching the chatbot response:', error);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { text: 'Sorry, something went wrong...', from: 'bot' },
-        ]);
-      }
+    const userMessage = input.trim();
+    setMessages(prev => [...prev, { text: userMessage, from: 'user' }]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage }),
+      });
+      const data = await response.json();
+      setMessages(prev => [...prev, { text: data.botResponse, from: 'bot' }]);
+    } catch {
+      setMessages(prev => [...prev, { text: 'Sorry, something went wrong...', from: 'bot' }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <>
-      {/* Cross-portfolio version switcher */}
+      {/* Version switcher — bottom LEFT to avoid overlap */}
       <div style={switcherStyle}>
         <span style={switcherLabelStyle}>Choisir une version</span>
-        <a
-          href="https://badreddineek.github.io/portfolioBadreddine/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={classicBtnStyle}
-        >
+        <a href="https://badreddineek.github.io/portfolioBadreddine/" target="_blank" rel="noopener noreferrer" style={classicBtnStyle}>
           <span>📄</span>
           <span>Version classique ↗</span>
         </a>
-        <a
-          href="https://badreddineek.github.io/portfolio-ai/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={aiBtnStyle}
-        >
+        <a href="https://badreddineek.github.io/portfolio-ai/" target="_blank" rel="noopener noreferrer" style={aiBtnStyle}>
           <span>🤖</span>
           <span>Version BEK.ai ↗</span>
         </a>
       </div>
 
-      {/* Chatbot widget */}
-      <div style={styles.chatbotContainer}>
-        <div style={styles.chatWindow}>
+      {/* Background */}
+      <div style={styles.pageBackground}>
+        {/* Chatbot widget */}
+        <div style={styles.chatbotContainer}>
+          {/* Header */}
+          <div style={styles.header}>
+            <div style={styles.avatarCircle}>BEK</div>
+            <div>
+              <div style={styles.headerName}>Badreddine EL KHAMLICHI</div>
+              <div style={styles.headerSub}>Data Scientist · Digital Twin 🤖</div>
+            </div>
+            <div style={styles.onlineDot} title="Online" />
+          </div>
+
+          {/* Messages */}
           <div style={styles.messagesContainer}>
             {messages.map((msg, index) => (
-              <div key={index} style={msg.from === 'bot' ? styles.botMessage : styles.userMessage}>
-                {msg.text}
+              <div key={index} style={msg.from === 'bot' ? styles.botRow : styles.userRow}>
+                {msg.from === 'bot' && <div style={styles.botAvatar}>BEK</div>}
+                <div style={msg.from === 'bot' ? styles.botBubble : styles.userBubble}>
+                  {msg.text}
+                </div>
               </div>
             ))}
+            {isLoading && (
+              <div style={styles.botRow}>
+                <div style={styles.botAvatar}>BEK</div>
+                <div style={styles.typingIndicator}>
+                  <span style={styles.dot} />
+                  <span style={{ ...styles.dot, animationDelay: '0.2s' }} />
+                  <span style={{ ...styles.dot, animationDelay: '0.4s' }} />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
+
+          {/* Input */}
           <form onSubmit={handleSubmit} style={styles.form}>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="Ask me anything... / Pose-moi une question..."
               style={styles.input}
+              disabled={isLoading}
             />
-            <button type="submit" style={styles.sendButton}>Send</button>
+            <button type="submit" style={isLoading ? styles.sendButtonDisabled : styles.sendButton} disabled={isLoading}>
+              {isLoading ? '...' : '➤'}
+            </button>
           </form>
         </div>
       </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-6px); }
+        }
+      `}</style>
     </>
   );
-};
+}
 
 const styles: { [key: string]: React.CSSProperties } = {
+  pageBackground: {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px',
+    fontFamily: "'Geist', 'Inter', sans-serif",
+  },
   chatbotContainer: {
-    position: 'fixed',
-    bottom: '20px',
-    right: '20px',
-    width: '90%',
-    maxWidth: '400px',
-    height: '500px',
-    backgroundColor: 'white',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    borderRadius: '8px',
+    width: '100%',
+    maxWidth: '480px',
+    height: '620px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+    borderRadius: '16px',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
   },
-  chatWindow: {
+  header: {
+    background: 'linear-gradient(135deg, #0f172a, #1e3a5f)',
+    padding: '16px 20px',
     display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    padding: '15px',
-    overflowY: 'auto',
-    borderBottom: '1px solid #ddd',
+    alignItems: 'center',
+    gap: '12px',
+    flexShrink: 0,
+  },
+  avatarCircle: {
+    width: '44px',
+    height: '44px',
+    borderRadius: '50%',
+    background: '#ffbd39',
+    color: '#0f172a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 800,
+    fontSize: '0.75rem',
+    flexShrink: 0,
+  },
+  headerName: {
+    color: '#f1f5f9',
+    fontWeight: 700,
+    fontSize: '0.9rem',
+  },
+  headerSub: {
+    color: '#94a3b8',
+    fontSize: '0.72rem',
+    marginTop: '2px',
+  },
+  onlineDot: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    background: '#22c55e',
+    marginLeft: 'auto',
+    flexShrink: 0,
+    boxShadow: '0 0 6px #22c55e',
   },
   messagesContainer: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: '12px',
     overflowY: 'auto',
-    maxHeight: 'calc(100% - 60px)',
+    padding: '16px',
+    backgroundColor: '#f8fafc',
   },
-  botMessage: {
-    backgroundColor: 'black',
-    color: 'white',
-    padding: '10px',
-    borderRadius: '5px',
-    maxWidth: '80%',
-    alignSelf: 'flex-start',
+  botRow: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    gap: '8px',
   },
-  userMessage: {
+  userRow: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  botAvatar: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    background: '#ffbd39',
+    color: '#0f172a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 800,
+    fontSize: '0.6rem',
+    flexShrink: 0,
+  },
+  botBubble: {
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9',
+    padding: '10px 14px',
+    borderRadius: '16px 16px 16px 4px',
+    maxWidth: '78%',
+    fontSize: '0.85rem',
+    lineHeight: '1.5',
+    whiteSpace: 'pre-wrap',
+  },
+  userBubble: {
     backgroundColor: '#ffbd39',
-    padding: '10px',
-    borderRadius: '5px',
-    color: 'black',
-    maxWidth: '80%',
-    alignSelf: 'flex-end',
+    color: '#0f172a',
+    padding: '10px 14px',
+    borderRadius: '16px 16px 4px 16px',
+    maxWidth: '78%',
+    fontSize: '0.85rem',
+    lineHeight: '1.5',
+    fontWeight: 500,
+    whiteSpace: 'pre-wrap',
+  },
+  typingIndicator: {
+    backgroundColor: '#0f172a',
+    padding: '12px 16px',
+    borderRadius: '16px 16px 16px 4px',
+    display: 'flex',
+    gap: '5px',
+    alignItems: 'center',
+  },
+  dot: {
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    backgroundColor: '#ffbd39',
+    animation: 'bounce 1.2s infinite',
+    display: 'inline-block',
   },
   form: {
     display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: '10px',
+    padding: '12px 16px',
+    gap: '8px',
+    borderTop: '1px solid #e2e8f0',
+    backgroundColor: '#ffffff',
+    flexShrink: 0,
   },
   input: {
     flex: 1,
-    padding: '8px',
-    fontSize: '14px',
-    border: '1px solid #ddd',
-    borderRadius: '5px',
-    color: 'black',
+    padding: '10px 14px',
+    fontSize: '0.85rem',
+    border: '1.5px solid #e2e8f0',
+    borderRadius: '999px',
+    color: '#0f172a',
+    outline: 'none',
+    backgroundColor: '#f8fafc',
   },
   sendButton: {
     backgroundColor: '#ffbd39',
-    color: 'black',
-    padding: '8px 15px',
-    marginLeft: '10px',
+    color: '#0f172a',
+    padding: '10px 16px',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '999px',
     cursor: 'pointer',
+    fontWeight: 700,
+    fontSize: '1rem',
+    flexShrink: 0,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#e2e8f0',
+    color: '#94a3b8',
+    padding: '10px 16px',
+    border: 'none',
+    borderRadius: '999px',
+    cursor: 'not-allowed',
+    fontWeight: 700,
+    fontSize: '1rem',
+    flexShrink: 0,
   },
 };
-
-export default Chatbot;
