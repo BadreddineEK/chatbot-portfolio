@@ -13,7 +13,7 @@ type HistoryItem = {
   content: string;
 };
 
-// ── Suggestion chips ─────────────────────────────────────────────────────────
+// ── Suggestion chips ──────────────────────────────────────────────────────────
 const INITIAL_CHIPS = [
   { label: '🎓 Mon parcours', value: 'Parle-moi de ton parcours' },
   { label: '💻 Mes projets', value: 'Quels sont tes projets GitHub ?' },
@@ -21,7 +21,6 @@ const INITIAL_CHIPS = [
   { label: '📬 Me contacter', value: 'Comment te contacter ?' },
 ];
 
-// Extract 2-3 contextual chips from the last bot reply
 function extractChips(botText: string): { label: string; value: string }[] {
   const chips: { label: string; value: string }[] = [];
   const t = botText.toLowerCase();
@@ -32,86 +31,46 @@ function extractChips(botText: string): { label: string; value: string }[] {
   if (t.includes('ia') || t.includes('llm') || t.includes('agent') || t.includes('copilot')) chips.push({ label: '🤖 Ton usage de l\'IA', value: 'Comment tu utilises l\'IA au quotidien ?' });
   if (t.includes('contact') || t.includes('linkedin') || t.includes('disponible') || t.includes('opportunit')) chips.push({ label: '📬 Te contacter', value: 'Comment te contacter ?' });
   if (t.includes('sport') || t.includes('running') || t.includes('marathon') || t.includes('10km')) chips.push({ label: '🏃 Tes perfs sport', value: 'Parle-moi de tes performances en running' });
-  // Return max 3, deduplicated
   return chips.slice(0, 3);
 }
 
-// ── Contact fallback button ───────────────────────────────────────────────────
+// ── Normalize bot markdown before rendering ───────────────────────────────────
+// Fixes: [url](url) duplicate links, lines starting with "- **label**: text"
+// and ensures blank lines before lists so react-markdown parses them correctly
+function normalizeMarkdown(text: string): string {
+  return text
+    // Convert "- **label**: content" → "- **label**: content" (already ok)
+    // Ensure a blank line before any list block
+    .replace(/(\S)\n(- )/g, '$1\n\n$2')
+    // Remove duplicate link syntax [https://url](https://url) → just the url as a link
+    .replace(/\[https?:\/\/([^\]]+)\]\(https?:\/\/[^)]+\)/g, (_, path) => `https://${path}`)
+    // Keep normal [text](url) intact (not matching the above)
+    .trim();
+}
+
+// ── Contact fallback ──────────────────────────────────────────────────────────
 function ContactFallback() {
   return (
     <div style={contactFallbackStyle}>
       <span style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>Contacte le vrai Badreddine 👇</span>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <a href="mailto:elkhamlichi.badreddine@gmail.com" style={contactBtnStyle}>
-          ✉️ Email
-        </a>
-        <a href="https://www.linkedin.com/in/badreddine-el-khamlichi/" target="_blank" rel="noopener noreferrer" style={contactBtnStyle}>
-          💼 LinkedIn
-        </a>
-        <a href="https://github.com/BadreddineEK" target="_blank" rel="noopener noreferrer" style={contactBtnStyle}>
-          🐙 GitHub
-        </a>
+        <a href="mailto:elkhamlichi.badreddine@gmail.com" style={contactBtnStyle}>✉️ Email</a>
+        <a href="https://www.linkedin.com/in/badreddine-el-khamlichi/" target="_blank" rel="noopener noreferrer" style={contactBtnStyle}>💼 LinkedIn</a>
+        <a href="https://github.com/BadreddineEK" target="_blank" rel="noopener noreferrer" style={contactBtnStyle}>🐙 GitHub</a>
       </div>
     </div>
   );
 }
 
-const contactFallbackStyle: React.CSSProperties = {
-  marginLeft: '36px',
-  marginTop: '4px',
-  padding: '10px 14px',
-  background: '#f1f5f9',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
-};
-
-const contactBtnStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  padding: '5px 12px',
-  borderRadius: '999px',
-  background: '#0f172a',
-  color: '#f1f5f9',
-  fontSize: '0.75rem',
-  fontWeight: 600,
-  textDecoration: 'none',
-  transition: 'opacity 0.15s',
-};
-
-// ── Markdown renderer for bot bubbles ────────────────────────────────────────
-const markdownComponents = {
-  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#ffbd39', textDecoration: 'underline', wordBreak: 'break-all' as const }}>
-      {children}
-    </a>
-  ),
-  p: ({ children }: { children?: React.ReactNode }) => (
-    <p style={{ margin: '0 0 6px 0' }}>{children}</p>
-  ),
-  ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul style={{ margin: '4px 0', paddingLeft: '18px' }}>{children}</ul>
-  ),
-  ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol style={{ margin: '4px 0', paddingLeft: '18px' }}>{children}</ol>
-  ),
-  li: ({ children }: { children?: React.ReactNode }) => (
-    <li style={{ marginBottom: '2px' }}>{children}</li>
-  ),
-  strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong style={{ color: '#ffbd39' }}>{children}</strong>
-  ),
-  code: ({ children }: { children?: React.ReactNode }) => (
-    <code style={{ background: 'rgba(255,189,57,0.15)', padding: '1px 5px', borderRadius: '4px', fontSize: '0.8rem' }}>{children}</code>
-  ),
-};
+const contactFallbackStyle: React.CSSProperties = { marginLeft: '36px', marginTop: '4px', padding: '10px 14px', background: '#f1f5f9', borderRadius: '12px', border: '1px solid #e2e8f0' };
+const contactBtnStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '999px', background: '#0f172a', color: '#f1f5f9', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' };
 
 function isContactMessage(text: string) {
   const t = text.toLowerCase();
   return t.includes('contact') || t.includes('joindre') || t.includes('reach') || t.includes('email') || t.includes('linkedin');
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+// ── Switcher styles ───────────────────────────────────────────────────────────
 const switcherStyle: React.CSSProperties = { position: 'fixed', bottom: '20px', left: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' };
 const switcherLabelStyle: React.CSSProperties = { fontSize: '0.65rem', color: 'rgba(0,0,0,0.4)', textAlign: 'left', paddingLeft: '4px', fontFamily: 'monospace' };
 const switcherBtnBase: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '999px', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600, fontFamily: 'monospace', whiteSpace: 'nowrap', cursor: 'pointer', transition: 'opacity 0.15s', border: 'none' };
@@ -191,10 +150,7 @@ export default function ChatbotPage() {
         { role: 'user', content: userMessage },
         { role: 'assistant', content: fullText },
       ]);
-
-      // Generate contextual chips from bot reply
-      const chips = extractChips(fullText);
-      setContextualChips(chips);
+      setContextualChips(extractChips(fullText));
 
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
@@ -247,11 +203,14 @@ export default function ChatbotPage() {
             {messages.map((msg, index) => (
               <div key={index} style={msg.from === 'bot' ? styles.botRow : styles.userRow}>
                 {msg.from === 'bot' && <div style={styles.botAvatar}>BEK</div>}
-                <div style={msg.from === 'bot' ? styles.botBubble : styles.userBubble}>
+                <div
+                  className={msg.from === 'bot' ? 'bot-bubble' : undefined}
+                  style={msg.from === 'bot' ? styles.botBubble : styles.userBubble}
+                >
                   {msg.from === 'bot' ? (
                     <>
-                      <ReactMarkdown components={markdownComponents}>
-                        {msg.text}
+                      <ReactMarkdown>
+                        {normalizeMarkdown(msg.text)}
                       </ReactMarkdown>
                       {isStreaming && index === messages.length - 1 && (
                         <span style={styles.cursor}>▋</span>
@@ -293,7 +252,7 @@ export default function ChatbotPage() {
               </div>
             )}
 
-            {/* Contextual chips after bot reply */}
+            {/* Contextual chips */}
             {!showInitialChips && !isStreaming && contextualChips.length > 0 && (
               <div style={styles.chipsContainer}>
                 {contextualChips.map(chip => (
@@ -330,6 +289,18 @@ export default function ChatbotPage() {
       <style>{`
         @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* ── Bot bubble markdown overrides ── */
+        .bot-bubble p { margin: 0 0 6px 0; }
+        .bot-bubble p:last-child { margin-bottom: 0; }
+        .bot-bubble ul, .bot-bubble ol { margin: 4px 0 6px 0; padding-left: 18px; }
+        .bot-bubble li { margin-bottom: 3px; list-style-type: disc; }
+        .bot-bubble ol li { list-style-type: decimal; }
+        .bot-bubble strong { color: #ffbd39; font-weight: 700; }
+        .bot-bubble em { color: #cbd5e1; font-style: italic; }
+        .bot-bubble code { background: rgba(255,189,57,0.15); padding: 1px 5px; border-radius: 4px; font-size: 0.8rem; font-family: monospace; }
+        .bot-bubble a { color: #ffbd39 !important; text-decoration: underline !important; word-break: break-all; cursor: pointer; }
+        .bot-bubble a:hover { opacity: 0.8; }
       `}</style>
     </>
   );
