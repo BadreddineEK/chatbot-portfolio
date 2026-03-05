@@ -130,7 +130,6 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ error: 'Configuration error' }), { status: 500 });
   }
 
-  // Build messages array: system + history (last 10 turns max) + new user message
   const recentHistory = (history || []).slice(-10);
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -157,21 +156,31 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ error: 'Groq API error' }), { status: 500 });
   }
 
-  // Forward the SSE stream directly to the client
   const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
+  // Use TextDecoder WITHOUT stream:true so each call gives a complete Unicode string
+  // We handle incomplete SSE lines via a string buffer instead
+  const decoder = new TextDecoder('utf-8');
 
   const stream = new ReadableStream({
     async start(controller) {
       const reader = groqResponse.body!.getReader();
+      let buffer = '';
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+
+          // Decode the binary chunk fully (no stream:true — avoids split multi-byte chars)
+          buffer += decoder.decode(value);
+
+          // Split on newlines, keep last incomplete line in buffer
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+
           for (const line of lines) {
-            const data = line.slice(6);
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data: ')) continue;
+            const data = trimmed.slice(6);
             if (data === '[DONE]') {
               controller.enqueue(encoder.encode('data: [DONE]\n\n'));
               break;
@@ -183,7 +192,7 @@ export async function POST(request: NextRequest) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`));
               }
             } catch {
-              // skip malformed chunks
+              // skip malformed JSON chunks
             }
           }
         }
