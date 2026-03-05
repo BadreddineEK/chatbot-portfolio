@@ -12,6 +12,61 @@ type HistoryItem = {
   content: string;
 };
 
+// ── Suggestion chips shown before first user message ──────────────────────────
+const SUGGESTION_CHIPS = [
+  { label: '🎓 Mon parcours', value: 'Parle-moi de ton parcours' },
+  { label: '💻 Mes projets', value: 'Quels sont tes projets GitHub ?' },
+  { label: '🛠️ Mon stack', value: 'Quel est ton stack technique ?' },
+  { label: '📬 Me contacter', value: 'Comment te contacter ?' },
+];
+
+// ── Render bot text: parse URLs into clickable <a> tags ───────────────────────
+function renderBotText(text: string, isCurrent: boolean, isStreaming: boolean) {
+  // Regex for URLs
+  const urlRegex = /(https?:\/\/[^\s)>"]+)/g;
+  const parts = text.split(urlRegex);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (urlRegex.test(part)) {
+          // Reset lastIndex after test()
+          urlRegex.lastIndex = 0;
+          return (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={linkStyle}
+            >
+              {part}
+            </a>
+          );
+        }
+        urlRegex.lastIndex = 0;
+        return <span key={i}>{part}</span>;
+      })}
+      {isStreaming && isCurrent && <span style={cursorStyle}>▋</span>}
+    </>
+  );
+}
+
+const linkStyle: React.CSSProperties = {
+  color: '#ffbd39',
+  textDecoration: 'underline',
+  wordBreak: 'break-all',
+  cursor: 'pointer',
+};
+
+const cursorStyle: React.CSSProperties = {
+  display: 'inline-block',
+  marginLeft: '2px',
+  animation: 'blink 0.8s step-end infinite',
+  color: '#ffbd39',
+  fontWeight: 'bold',
+};
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 const switcherStyle: React.CSSProperties = {
   position: 'fixed',
   bottom: '20px',
@@ -22,7 +77,6 @@ const switcherStyle: React.CSSProperties = {
   alignItems: 'flex-start',
   gap: '6px',
 };
-
 const switcherLabelStyle: React.CSSProperties = {
   fontSize: '0.65rem',
   color: 'rgba(0,0,0,0.4)',
@@ -30,8 +84,7 @@ const switcherLabelStyle: React.CSSProperties = {
   paddingLeft: '4px',
   fontFamily: 'monospace',
 };
-
-const switcherBtnBaseStyle: React.CSSProperties = {
+const switcherBtnBase: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',
@@ -46,31 +99,21 @@ const switcherBtnBaseStyle: React.CSSProperties = {
   transition: 'opacity 0.15s',
   border: 'none',
 };
-
-const classicBtnStyle: React.CSSProperties = {
-  ...switcherBtnBaseStyle,
-  background: '#f1f5f9',
-  color: '#1e293b',
-  boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
-};
-
-const aiBtnStyle: React.CSSProperties = {
-  ...switcherBtnBaseStyle,
-  background: 'linear-gradient(135deg, #0f172a, #1e3a5f)',
-  color: '#e2e8f0',
-  boxShadow: '0 2px 12px rgba(15,23,42,0.3)',
-};
+const classicBtnStyle: React.CSSProperties = { ...switcherBtnBase, background: '#f1f5f9', color: '#1e293b', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' };
+const aiBtnStyle: React.CSSProperties = { ...switcherBtnBase, background: 'linear-gradient(135deg, #0f172a, #1e3a5f)', color: '#e2e8f0', boxShadow: '0 2px 12px rgba(15,23,42,0.3)' };
 
 const INITIAL_MESSAGE: Message = {
   text: "Salut ! 👋 Je suis Badreddine (version IA 🤖). Pose-moi des questions sur mon parcours, mes compétences ou mes projets — en français ou en anglais !",
   from: 'bot',
 };
 
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [chipsVisible, setChipsVisible] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -78,20 +121,15 @@ export default function ChatbotPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!input.trim() || isStreaming) return;
-
-    const userMessage = input.trim();
+  const sendMessage = async (userMessage: string) => {
+    if (!userMessage.trim() || isStreaming) return;
+    setChipsVisible(false);
     setMessages(prev => [...prev, { text: userMessage, from: 'user' }]);
     setInput('');
     setIsStreaming(true);
-
-    // Add a blank bot message that we'll fill in via streaming
     setMessages(prev => [...prev, { text: '', from: 'bot' }]);
 
     abortRef.current = new AbortController();
-
     try {
       const response = await fetch('/api/chatbot', {
         method: 'POST',
@@ -99,45 +137,42 @@ export default function ChatbotPage() {
         body: JSON.stringify({ message: userMessage, history }),
         signal: abortRef.current.signal,
       });
-
       if (!response.ok || !response.body) throw new Error('API error');
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      let sseBuffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+        sseBuffer += decoder.decode(value);
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() ?? '';
         for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
           const data = line.slice(6);
           if (data === '[DONE]') break;
           try {
             const parsed = JSON.parse(data);
             if (parsed.token) {
               fullText += parsed.token;
-              // Update last message (bot) in real-time
               setMessages(prev => {
                 const updated = [...prev];
                 updated[updated.length - 1] = { text: fullText, from: 'bot' };
                 return updated;
               });
             }
-          } catch {
-            // skip
-          }
+          } catch { /* skip */ }
         }
       }
 
-      // Save to conversation history for memory
       setHistory(prev => [
         ...prev,
         { role: 'user', content: userMessage },
         { role: 'assistant', content: fullText },
       ]);
-
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
         setMessages(prev => {
@@ -151,23 +186,27 @@ export default function ChatbotPage() {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(input.trim());
+  };
+
   return (
     <>
       {/* Version switcher */}
       <div style={switcherStyle}>
         <span style={switcherLabelStyle}>Choisir une version</span>
         <a href="https://badreddineek.github.io/portfolioBadreddine/" target="_blank" rel="noopener noreferrer" style={classicBtnStyle}>
-          <span>📄</span>
-          <span>Version classique ↗</span>
+          <span>📄</span><span>Version classique ↗</span>
         </a>
         <a href="https://badreddineek.github.io/portfolio-ai/" target="_blank" rel="noopener noreferrer" style={aiBtnStyle}>
-          <span>🤖</span>
-          <span>Version BEK.ai ↗</span>
+          <span>🤖</span><span>Version BEK.ai ↗</span>
         </a>
       </div>
 
       <div style={styles.pageBackground}>
         <div style={styles.chatbotContainer}>
+
           {/* Header */}
           <div style={styles.header}>
             <div style={styles.avatarCircle}>BEK</div>
@@ -184,15 +223,15 @@ export default function ChatbotPage() {
               <div key={index} style={msg.from === 'bot' ? styles.botRow : styles.userRow}>
                 {msg.from === 'bot' && <div style={styles.botAvatar}>BEK</div>}
                 <div style={msg.from === 'bot' ? styles.botBubble : styles.userBubble}>
-                  {msg.text}
-                  {/* blinking cursor on the last bot message while streaming */}
-                  {isStreaming && index === messages.length - 1 && msg.from === 'bot' && (
-                    <span style={styles.cursor}>▋</span>
-                  )}
+                  {msg.from === 'bot'
+                    ? renderBotText(msg.text, index === messages.length - 1, isStreaming)
+                    : msg.text
+                  }
                 </div>
               </div>
             ))}
-            {/* Typing dots only when streaming hasn't started yet (first token not arrived) */}
+
+            {/* Typing dots before first token */}
             {isStreaming && messages[messages.length - 1]?.text === '' && (
               <div style={styles.botRow}>
                 <div style={styles.botAvatar}>BEK</div>
@@ -203,6 +242,24 @@ export default function ChatbotPage() {
                 </div>
               </div>
             )}
+
+            {/* Suggestion chips — shown only before first user message */}
+            {chipsVisible && !isStreaming && (
+              <div style={styles.chipsContainer}>
+                {SUGGESTION_CHIPS.map(chip => (
+                  <button
+                    key={chip.value}
+                    style={styles.chip}
+                    onClick={() => sendMessage(chip.value)}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#ffbd39')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -211,7 +268,7 @@ export default function ChatbotPage() {
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={e => setInput(e.target.value)}
               placeholder="Ask me anything... / Pose-moi une question..."
               style={styles.input}
               disabled={isStreaming}
@@ -279,16 +336,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '0.75rem',
     flexShrink: 0,
   },
-  headerName: {
-    color: '#f1f5f9',
-    fontWeight: 700,
-    fontSize: '0.9rem',
-  },
-  headerSub: {
-    color: '#94a3b8',
-    fontSize: '0.72rem',
-    marginTop: '2px',
-  },
+  headerName: { color: '#f1f5f9', fontWeight: 700, fontSize: '0.9rem' },
+  headerSub: { color: '#94a3b8', fontSize: '0.72rem', marginTop: '2px' },
   onlineDot: {
     width: '10px',
     height: '10px',
@@ -307,15 +356,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '16px',
     backgroundColor: '#f8fafc',
   },
-  botRow: {
-    display: 'flex',
-    alignItems: 'flex-end',
-    gap: '8px',
-  },
-  userRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-  },
+  botRow: { display: 'flex', alignItems: 'flex-end', gap: '8px' },
+  userRow: { display: 'flex', justifyContent: 'flex-end' },
   botAvatar: {
     width: '28px',
     height: '28px',
@@ -366,12 +408,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     animation: 'bounce 1.2s infinite',
     display: 'inline-block',
   },
-  cursor: {
-    display: 'inline-block',
-    marginLeft: '2px',
-    animation: 'blink 0.8s step-end infinite',
-    color: '#ffbd39',
-    fontWeight: 'bold',
+  chipsContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    marginTop: '4px',
+    paddingLeft: '36px',
+  },
+  chip: {
+    padding: '6px 12px',
+    borderRadius: '999px',
+    border: '1.5px solid #ffbd39',
+    background: 'transparent',
+    color: '#0f172a',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+    fontFamily: "'Geist', 'Inter', sans-serif",
   },
   form: {
     display: 'flex',
