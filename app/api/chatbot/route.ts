@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
@@ -114,52 +114,91 @@ For questions about: relationship status, detailed religious practice, family, h
 - EN: "That one I'll leave to the real Badreddine 😄 What I can say is I'm curious, I love laughing and exploring — the rest is for him to share!"
 `;
 
-export async function POST(request: Request) {
-  const { message } = await request.json();
+export const runtime = 'edge';
+
+export async function POST(request: NextRequest) {
+  const { message, history } = await request.json() as {
+    message: string;
+    history: { role: 'user' | 'assistant'; content: string }[];
+  };
 
   if (!message?.trim()) {
-    return NextResponse.json({ botResponse: 'Please send a message.' }, { status: 400 });
+    return new Response(JSON.stringify({ error: 'Empty message' }), { status: 400 });
   }
 
   if (!GROQ_API_KEY) {
-    console.error('GROQ_API_KEY is not set');
-    return NextResponse.json({ botResponse: 'Configuration error. Please contact the admin.' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Configuration error' }), { status: 500 });
   }
 
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: message },
-        ],
-        max_tokens: 700,
-        temperature: 0.7,
-      }),
-    });
+  // Build messages array: system + history (last 10 turns max) + new user message
+  const recentHistory = (history || []).slice(-10);
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...recentHistory,
+    { role: 'user', content: message },
+  ];
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('Groq API error:', response.status, errorBody);
-      throw new Error('Groq API error');
-    }
+  const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      max_tokens: 700,
+      temperature: 0.7,
+      stream: true,
+    }),
+  });
 
-    const data = await response.json() as {
-      choices: { message: { content: string } }[];
-    };
-    const botResponse = data?.choices?.[0]?.message?.content ?? "Sorry, I couldn't generate a response.";
-
-    return NextResponse.json({ botResponse });
-  } catch (error) {
-    console.error('Chatbot error:', error);
-    return NextResponse.json({
-      botResponse: "Désolé, une erreur est survenue. / Sorry, something went wrong. Please try again later.",
-    });
+  if (!groqResponse.ok || !groqResponse.body) {
+    return new Response(JSON.stringify({ error: 'Groq API error' }), { status: 500 });
   }
+
+  // Forward the SSE stream directly to the client
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = groqResponse.body!.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+          for (const line of lines) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              break;
+            }
+            try {
+              const parsed = JSON.parse(data);
+              const token = parsed.choices?.[0]?.delta?.content;
+              if (token) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`));
+              }
+            } catch {
+              // skip malformed chunks
+            }
+          }
+        }
+      } finally {
+        controller.close();
+        reader.releaseLock();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
 }

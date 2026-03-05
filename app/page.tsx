@@ -7,6 +7,11 @@ type Message = {
   from: 'bot' | 'user';
 };
 
+type HistoryItem = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 const switcherStyle: React.CSSProperties = {
   position: 'fixed',
   bottom: '20px',
@@ -63,41 +68,92 @@ const INITIAL_MESSAGE: Message = {
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, isStreaming]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isStreaming) return;
 
     const userMessage = input.trim();
     setMessages(prev => [...prev, { text: userMessage, from: 'user' }]);
     setInput('');
-    setIsLoading(true);
+    setIsStreaming(true);
+
+    // Add a blank bot message that we'll fill in via streaming
+    setMessages(prev => [...prev, { text: '', from: 'bot' }]);
+
+    abortRef.current = new AbortController();
 
     try {
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage }),
+        body: JSON.stringify({ message: userMessage, history }),
+        signal: abortRef.current.signal,
       });
-      const data = await response.json();
-      setMessages(prev => [...prev, { text: data.botResponse, from: 'bot' }]);
-    } catch {
-      setMessages(prev => [...prev, { text: 'Sorry, something went wrong...', from: 'bot' }]);
+
+      if (!response.ok || !response.body) throw new Error('API error');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+        for (const line of lines) {
+          const data = line.slice(6);
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.token) {
+              fullText += parsed.token;
+              // Update last message (bot) in real-time
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { text: fullText, from: 'bot' };
+                return updated;
+              });
+            }
+          } catch {
+            // skip
+          }
+        }
+      }
+
+      // Save to conversation history for memory
+      setHistory(prev => [
+        ...prev,
+        { role: 'user', content: userMessage },
+        { role: 'assistant', content: fullText },
+      ]);
+
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { text: 'Désolé, une erreur est survenue. Réessaie ! 🙏', from: 'bot' };
+          return updated;
+        });
+      }
     } finally {
-      setIsLoading(false);
+      setIsStreaming(false);
     }
   };
 
   return (
     <>
-      {/* Version switcher — bottom LEFT to avoid overlap */}
+      {/* Version switcher */}
       <div style={switcherStyle}>
         <span style={switcherLabelStyle}>Choisir une version</span>
         <a href="https://badreddineek.github.io/portfolioBadreddine/" target="_blank" rel="noopener noreferrer" style={classicBtnStyle}>
@@ -110,9 +166,7 @@ export default function ChatbotPage() {
         </a>
       </div>
 
-      {/* Background */}
       <div style={styles.pageBackground}>
-        {/* Chatbot widget */}
         <div style={styles.chatbotContainer}>
           {/* Header */}
           <div style={styles.header}>
@@ -131,10 +185,15 @@ export default function ChatbotPage() {
                 {msg.from === 'bot' && <div style={styles.botAvatar}>BEK</div>}
                 <div style={msg.from === 'bot' ? styles.botBubble : styles.userBubble}>
                   {msg.text}
+                  {/* blinking cursor on the last bot message while streaming */}
+                  {isStreaming && index === messages.length - 1 && msg.from === 'bot' && (
+                    <span style={styles.cursor}>▋</span>
+                  )}
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {/* Typing dots only when streaming hasn't started yet (first token not arrived) */}
+            {isStreaming && messages[messages.length - 1]?.text === '' && (
               <div style={styles.botRow}>
                 <div style={styles.botAvatar}>BEK</div>
                 <div style={styles.typingIndicator}>
@@ -155,10 +214,10 @@ export default function ChatbotPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything... / Pose-moi une question..."
               style={styles.input}
-              disabled={isLoading}
+              disabled={isStreaming}
             />
-            <button type="submit" style={isLoading ? styles.sendButtonDisabled : styles.sendButton} disabled={isLoading}>
-              {isLoading ? '...' : '➤'}
+            <button type="submit" style={isStreaming ? styles.sendButtonDisabled : styles.sendButton} disabled={isStreaming}>
+              {isStreaming ? '...' : '➤'}
             </button>
           </form>
         </div>
@@ -168,6 +227,10 @@ export default function ChatbotPage() {
         @keyframes bounce {
           0%, 80%, 100% { transform: translateY(0); }
           40% { transform: translateY(-6px); }
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
         }
       `}</style>
     </>
@@ -302,6 +365,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: '#ffbd39',
     animation: 'bounce 1.2s infinite',
     display: 'inline-block',
+  },
+  cursor: {
+    display: 'inline-block',
+    marginLeft: '2px',
+    animation: 'blink 0.8s step-end infinite',
+    color: '#ffbd39',
+    fontWeight: 'bold',
   },
   form: {
     display: 'flex',
