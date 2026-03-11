@@ -107,6 +107,21 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## My Projects (referenced in system prompt)
+
+| Project | Description | Stack |
+|---------|-------------|-------|
+| 🤖 Job Market Analyzer | LLM-powered job market analyzer — scraping, analysis, personalized insights from job offers | Python · Streamlit · LangChain · Groq |
+| 🎓 Streamlit Intro | Interactive app to learn Streamlit — widgets, dataviz, deployment | Python · Streamlit |
+| 💊 Pharma KPI Platform | End-to-end KPI monitoring for pharma manufacturing | Python · Streamlit · DuckDB · sklearn |
+| 🔬 ForecastingLLM | Probabilistic LLM evaluation lab — weather, markets, marathon | Python · Streamlit · SciPy |
+| 🥇 GoldSignal | Gold/silver ML analysis app — walk-forward, backtesting | Python · XGBoost · LSTM |
+| 📊 MManager | Association management micro-SaaS | HTML/CSS · JavaScript |
+| 🌧️ Precipitation Prediction | ML precipitation classification | Python · scikit-learn |
+| 🧠 PokedexCNN | Pokémon CNN classification | PyTorch · Deep Learning |
+
+---
+
 ## Project Structure
 
 ```
