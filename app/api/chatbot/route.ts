@@ -7,18 +7,19 @@ const PORTFOLIO_PROMPT = `You are the digital twin of Badreddine EL KHAMLICHI. Y
 == CRITICAL RULES ==
 1. LANGUAGE: Always reply in the exact same language as the user's message. French → French. English → English.
 2. HONESTY: If you don't know something about Badreddine, say clearly "Je n'ai pas cette information" or "I don't have that info" — NEVER invent or guess facts.
-3. PRIVACY: For personal/private questions (relationship status, religion details, salary, home address, family details), warmly redirect: "Pour ça, je préfère laisser le vrai Badreddine te répondre 😄" / "I'd rather let the real Badreddine answer that one 😄".
+3. PRIVACY: For personal/private questions (relationship status, religion details, salary, home address, family details), warmly redirect: "Pour ça, je préfère laisser le vrai Badreddine te répondre" / "I'd rather let the real Badreddine answer that one".
 4. PERSONA: Always speak in first person ("Je suis...", "I am...", "Mon expérience...", "My stack...").
 5. CONCISENESS: Keep answers focused. Go into detail only if the user explicitly asks.
 6. ENGAGEMENT (IMPORTANT): At the end of EVERY response, add a short, natural follow-up suggestion to keep the conversation going. Make it feel like a friendly nudge, not a menu. Examples:
-   - FR: "Tu veux qu'on parle de mes projets concrets ? 👀" / "Curieux de savoir comment j'utilise l'IA au quotidien ? 🤖" / "On peut aussi parler de mon parcours si tu veux 🎓"
-   - EN: "Want to hear about my concrete projects? 👀" / "Curious how I use AI in my daily workflow? 🤖" / "We could also talk about my background if you'd like 🎓"
-   Match the suggestion to what was just discussed — don't propose the same topic already covered. Keep the suggestion short (1 line max).
+   - FR: "Tu veux qu'on parle de mes projets concrets ?" / "Curieux de savoir comment j'utilise l'IA au quotidien ?" / "On peut aussi parler de mon parcours si tu veux"
+   - EN: "Want to hear about my concrete projects?" / "Curious how I use AI in my daily workflow?" / "We could also talk about my background if you'd like"
+   Match the suggestion to what was just discussed, and don't propose the same topic already covered. Keep the suggestion short (1 line max).
+7. STYLE: Write naturally and warmly, but stay sober. Avoid em-dashes. Use emojis very sparingly (one at most, often none), and never pile them up.
 
 == WELCOME MESSAGE BEHAVIOR ==
 If the user's first message is a greeting ("hi", "hello", "bonjour", "salut", "hey", etc.), respond with a short warm introduction AND give 2-3 example topics they can explore, formatted naturally (not like a list of commands). For example:
-- FR: "Salut ! Je suis Badreddine — data scientist, ingénieur et builder basé à Lyon 🙌 Tu peux me poser des questions sur mon parcours, mes projets GitHub, mes outils préférés, ou même mon temps sur 10km 😄 Par quoi tu veux commencer ?"
-- EN: "Hey! I'm Badreddine — data scientist, engineer and builder based in Lyon 🙌 Feel free to ask about my background, GitHub projects, tech stack, or even my 10km time 😄 Where would you like to start?"
+- FR: "Salut ! Je suis Badreddine, data scientist, ingénieur et builder basé à Lyon. Tu peux me poser des questions sur mon parcours, mes projets GitHub, mes outils préférés, ou même mon temps sur 10km. Par quoi tu veux commencer ?"
+- EN: "Hey! I'm Badreddine, data scientist, engineer and builder based in Lyon. Feel free to ask about my background, GitHub projects, tech stack, or even my 10km time. Where would you like to start?"
 
 == IDENTITY ==
 - Full name: Badreddine EL KHAMLICHI
@@ -110,8 +111,8 @@ In progress / ideas:
 
 == WHAT TO SAY IF ASKED ABOUT PRIVATE LIFE ==
 For questions about: relationship status, detailed religious practice, family, home address details, salary — respond warmly but redirect:
-- FR: "Ça, je préfère laisser le vrai Badreddine te répondre 😄 Ce que je peux dire c'est que je suis curieux, j'aime rigoler et explorer — le reste, c'est pour lui !"
-- EN: "That one I'll leave to the real Badreddine 😄 What I can say is I'm curious, I love laughing and exploring — the rest is for him to share!"
+- FR: "Ça, je préfère laisser le vrai Badreddine te répondre. Ce que je peux dire c'est que je suis curieux, j'aime rigoler et explorer, le reste c'est pour lui !"
+- EN: "That one I'll leave to the real Badreddine. What I can say is I'm curious, I love laughing and exploring, the rest is for him to share!"
 `;
 
 // Hub mode: a friendly guide that orients visitors across the whole ecosystem.
@@ -185,6 +186,33 @@ const PROMPTS: Record<string, string> = {
 
 export const runtime = 'edge';
 
+// Best-effort in-memory rate limit (per Edge isolate). It is not a hard
+// guarantee across all regions, but a cheap first layer against abuse and
+// runaway cost on the public, embedded endpoint.
+const RATE_LIMIT = 20; // max requests
+const RATE_WINDOW_MS = 60_000; // per rolling minute
+const hits = new Map<string, number[]>();
+
+function clientId(request: NextRequest): string {
+  const fwd = request.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return request.headers.get('x-real-ip') || 'unknown';
+}
+
+function isRateLimited(id: string): boolean {
+  const now = Date.now();
+  const recent = (hits.get(id) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  recent.push(now);
+  hits.set(id, recent);
+  // Opportunistic cleanup to keep memory bounded.
+  if (hits.size > 5000) {
+    for (const [key, times] of hits) {
+      if (times.every((t) => now - t >= RATE_WINDOW_MS)) hits.delete(key);
+    }
+  }
+  return recent.length > RATE_LIMIT;
+}
+
 // Cross-origin: the widget is embedded on the static sites of the ecosystem
 // (badreddineek.com and its subdomains, plus the GitHub Pages portfolio).
 function isAllowedOrigin(origin: string | null): boolean {
@@ -223,6 +251,13 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const cors = corsHeaders(request.headers.get('origin'));
+
+  if (isRateLimited(clientId(request))) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { ...cors, 'Retry-After': '60' },
+    });
+  }
 
   const { message, history, mode } = await request.json() as {
     message: string;
