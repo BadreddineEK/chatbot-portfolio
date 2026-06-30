@@ -21,13 +21,40 @@
   })();
   var API_URL = API_BASE + '/api/chatbot';
 
-  var WELCOME = "Salut. Je suis Badreddine, version IA. Pose-moi tes questions sur mon parcours, mes projets ou mon stack, en francais ou en anglais.";
-  var CHIPS = [
-    { label: 'Mon parcours', value: 'Parle-moi de ton parcours' },
-    { label: 'Mes projets', value: 'Quels sont tes projets ?' },
-    { label: 'Mon stack', value: 'Quel est ton stack technique ?' },
-    { label: 'Me contacter', value: 'Comment te contacter ?' }
-  ];
+  var MODE = (SCRIPT && SCRIPT.getAttribute('data-bek-mode')) || 'portfolio';
+  var THEME_OVERRIDE = (SCRIPT && SCRIPT.getAttribute('data-bek-theme')) || 'auto';
+
+  // Per-context welcome message and suggestion chips.
+  var PRESETS = {
+    portfolio: {
+      welcome: "Salut. Je suis Badreddine, version IA. Pose-moi tes questions sur mon parcours, mes projets ou mon stack, en francais ou en anglais.",
+      chips: [
+        { label: 'Mon parcours', value: 'Parle-moi de ton parcours' },
+        { label: 'Mes projets', value: 'Quels sont tes projets ?' },
+        { label: 'Mon stack', value: 'Quel est ton stack technique ?' },
+        { label: 'Me contacter', value: 'Comment te contacter ?' }
+      ]
+    },
+    hub: {
+      welcome: "Bienvenue. Je suis l'assistant de Badreddine. Je peux t'orienter dans son univers (portfolio, services, labs) ou repondre a tes questions. Que cherches-tu ?",
+      chips: [
+        { label: 'Decouvrir le portfolio', value: 'Montre-moi le portfolio de Badreddine' },
+        { label: 'Les services', value: 'Quels services propose Badreddine ?' },
+        { label: 'Les Labs', value: "C'est quoi les Labs ?" },
+        { label: 'Le contacter', value: 'Comment contacter Badreddine ?' }
+      ]
+    },
+    services: {
+      welcome: "Salut. Je peux t'expliquer les prestations de Badreddine (apps data, IA, automatisation, web) et t'aider a cadrer ton besoin. Qu'est-ce qui t'amene ?",
+      chips: [
+        { label: 'Sheet to App', value: 'Explique-moi le service Sheet to App' },
+        { label: 'Automatisation IA', value: 'Comment fonctionne le setup IA et automatisation ?' },
+        { label: 'Dashboard', value: 'Je veux un dashboard pour mes donnees' },
+        { label: 'Demander un devis', value: 'Comment demander un devis ?' }
+      ]
+    }
+  };
+  var PRESET = PRESETS[MODE] || PRESETS.portfolio;
 
   // ── Styles ──────────────────────────────────────────────────────────────
   var css = [
@@ -131,6 +158,7 @@
   }
 
   function detectTheme() {
+    if (THEME_OVERRIDE === 'dark' || THEME_OVERRIDE === 'light') return THEME_OVERRIDE;
     var t = document.documentElement.getAttribute('data-theme');
     if (t === 'dark' || t === 'light') return t;
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -240,7 +268,7 @@
     fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, history: history.slice(-10) })
+      body: JSON.stringify({ message: text, history: history.slice(-10), mode: MODE })
     }).then(function (res) {
       if (!res.ok || !res.body) throw new Error('api');
       var reader = res.body.getReader();
@@ -315,6 +343,6 @@
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   // Seed conversation
-  botBubble(WELCOME);
-  showChips(CHIPS);
+  botBubble(PRESET.welcome);
+  showChips(PRESET.chips);
 })();
