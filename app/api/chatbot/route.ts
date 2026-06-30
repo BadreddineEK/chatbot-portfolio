@@ -116,18 +116,56 @@ For questions about: relationship status, detailed religious practice, family, h
 
 export const runtime = 'edge';
 
+// Cross-origin: the widget is embedded on the static sites of the ecosystem
+// (badreddineek.com and its subdomains, plus the GitHub Pages portfolio).
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  try {
+    const { hostname } = new URL(origin);
+    return (
+      hostname === 'badreddineek.com' ||
+      hostname.endsWith('.badreddineek.com') ||
+      hostname === 'badreddineek.github.io' ||
+      hostname === 'nidham.fr' ||
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1'
+    );
+  } catch {
+    return false;
+  }
+}
+
+function corsHeaders(origin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Vary': 'Origin',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+  };
+  if (isAllowedOrigin(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin as string;
+  }
+  return headers;
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new Response(null, { status: 204, headers: corsHeaders(request.headers.get('origin')) });
+}
+
 export async function POST(request: NextRequest) {
+  const cors = corsHeaders(request.headers.get('origin'));
+
   const { message, history } = await request.json() as {
     message: string;
     history: { role: 'user' | 'assistant'; content: string }[];
   };
 
   if (!message?.trim()) {
-    return new Response(JSON.stringify({ error: 'Empty message' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Empty message' }), { status: 400, headers: cors });
   }
 
   if (!GROQ_API_KEY) {
-    return new Response(JSON.stringify({ error: 'Configuration error' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Configuration error' }), { status: 500, headers: cors });
   }
 
   const recentHistory = (history || []).slice(-10);
@@ -153,7 +191,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!groqResponse.ok || !groqResponse.body) {
-    return new Response(JSON.stringify({ error: 'Groq API error' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Groq API error' }), { status: 500, headers: cors });
   }
 
   const encoder = new TextEncoder();
@@ -208,6 +246,7 @@ export async function POST(request: NextRequest) {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
+      ...cors,
     },
   });
 }
