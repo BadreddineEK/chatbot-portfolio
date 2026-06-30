@@ -95,15 +95,35 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## Embeddable widget
+
+The same assistant is available as a drop-in widget for the other sites of the ecosystem (hub, portfolio, services). It is a self-contained vanilla JS file served from this app at `public/widget.js`.
+
+Add it to any page with one line:
+
+```html
+<script src="https://chatbot-portfolio-eosin.vercel.app/widget.js" defer></script>
+```
+
+Optional attributes:
+
+- `data-bek-mode` : conversation context, one of `portfolio` (default), `hub` or `services`. Each mode uses a dedicated system prompt in `app/api/chatbot/route.ts`.
+- `data-bek-theme` : force `light` or `dark`. Defaults to `auto` (follows the host page `data-theme` attribute, then the OS preference).
+
+The widget derives the API URL from its own script origin and streams responses from `/api/chatbot`. Cross-origin requests are allowed for the badreddineek.com domains and the GitHub Pages portfolio.
+
+---
+
 ## Features
 
-- **Bilingual** — auto-detects French or English and replies accordingly
-- **Contextual** — detailed system prompt covering education, work, skills, projects, hobbies
-- **Fast** — Groq inference is near-instant (~200ms)
-- **Typing indicator** — animated dots while the bot is thinking
-- **Responsive** — works on mobile and desktop
-- **Portfolio switcher** — quick links to classic and AI portfolio versions
-- **Secure** — API key stays server-side, never exposed to the client
+- **Bilingual** : auto-detects French or English and replies accordingly
+- **Contextual** : detailed system prompt covering education, work, skills, projects, hobbies
+- **Multi-context** : portfolio, hub and services modes, each with its own system prompt
+- **Embeddable** : one-line widget for any site of the ecosystem
+- **Fast** : Groq inference is near-instant (~200ms)
+- **Typing indicator** : animated dots while the bot is thinking
+- **Responsive** : works on mobile and desktop
+- **Secure** : API key stays server-side, never exposed to the client
 
 ---
 
