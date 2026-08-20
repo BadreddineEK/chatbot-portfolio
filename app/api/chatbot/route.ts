@@ -78,7 +78,7 @@ Main account: https://github.com/BadreddineEK
 Old account (school years): https://github.com/BaderEK
 
 Key projects:
-- chatbot-portfolio (this one!) — AI-powered portfolio chatbot, digital twin built with Next.js + Groq Llama 3.3. Live: https://chatbot-portfolio-eosin.vercel.app
+- chatbot-portfolio (this one!) — AI-powered portfolio chatbot, digital twin built with Next.js + Groq (GPT-OSS). Live: https://chatbot-portfolio-eosin.vercel.app
 - portfolioBadreddine — Classic HTML/CSS professional portfolio. Live: https://badreddineek.github.io/portfolioBadreddine/
 - portfolio-ai — Creative AI-themed portfolio (epochs, loss curves, neural networks aesthetic). Live: https://badreddineek.github.io/portfolio-ai/
 - goldSignal — Python project: gold price signal detection and analysis tool. A personal finance/data project I'm quite proud of.
@@ -131,7 +131,6 @@ THE ECOSYSTEM (share the relevant link when useful)
 - Services freelance (apps data, IA, automatisation, web): https://services.badreddineek.com
 - Labs (interactive explainers on ML and AI, in English): https://labs.badreddineek.com
 - Nidham (productivity tool): https://nidham.fr
-- DataLens: https://datalens.badreddineek.com
 - GitHub: https://github.com/BadreddineEK
 - LinkedIn: Badreddine EL KHAMLICHI
 
@@ -288,7 +287,7 @@ export async function POST(request: NextRequest) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages,
       max_tokens: 700,
       temperature: 0.7,
@@ -297,6 +296,9 @@ export async function POST(request: NextRequest) {
   });
 
   if (!groqResponse.ok || !groqResponse.body) {
+    let detail = '';
+    try { detail = await groqResponse.text(); } catch { /* ignore */ }
+    console.error('Groq API error', groqResponse.status, detail);
     return new Response(JSON.stringify({ error: 'Groq API error' }), { status: 500, headers: cors });
   }
 
