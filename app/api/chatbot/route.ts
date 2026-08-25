@@ -78,6 +78,7 @@ Main account: https://github.com/BadreddineEK
 Old account (school years): https://github.com/BaderEK
 
 Key projects:
+- rentree-2026-lab — Python (pandas/SciPy) data investigation: does the French school still reduce inequality? Built only from public data (DEPP: IPS for primary/middle/high schools, value-added; INSEE Filosofi). Private-public gap growing by level, IPS is almost a map of incomes (0.84 correlation), but value-added is positive where it's hardest. Article: https://labs.badreddineek.com/rentree-2026/ — Repo: https://github.com/BadreddineEK/rentree-2026-lab
 - canicule-france-perception — Python/Streamlit: was the summer of 2026 really exceptional? Open data (Open-Meteo/ERA5) since 1950, tropical nights, °C/decade trend with 95% CI. Live: https://canicule-2026-perception.streamlit.app/
 - canicule-lyon-icu-model — Python/Streamlit: Lyon urban heat island at fine grain (~29,657 blocks) and the aggregation trap (R² 87% → ~64% under cross-validation). Live: https://canicule-lyon-model.streamlit.app/
 - worldcup-2026-stats-vs-winner — Python/Streamlit: do the stats predict the World Cup 2026 winner? Analysis on real, ongoing-tournament data. Live: https://worldcup-2026-stats.streamlit.app/
@@ -101,7 +102,8 @@ In progress / ideas:
 - Always experimenting with new data engineering and LLM tooling
 
 == LATEST PUBLICATIONS (LinkedIn) ==
-- Canicule 2026 (heatwave) — perception vs reality: two data apps (France since 1950 + Lyon urban heat island) with a carousel. This is my most recent post. Link: https://www.linkedin.com/feed/update/urn:li:activity:7496137802007404544/
+- School inequality investigation — "Does the French school still reduce inequality?": a rigorous data investigation from public data only (DEPP, INSEE). This is my most recent post, and the first Lab in this series. Article: https://labs.badreddineek.com/rentree-2026/ — Post: https://www.linkedin.com/feed/update/urn:li:activity:7497973126664847361/
+- Canicule 2026 (heatwave) — perception vs reality: two data apps (France since 1950 + Lyon urban heat island) with a carousel. Link: https://www.linkedin.com/feed/update/urn:li:activity:7496137802007404544/
 - World Cup 2026 — do the stats predict the winner? Data analysis on the ongoing tournament. Link: https://www.linkedin.com/feed/update/urn:li:activity:7484890826721107968/
 
 == SPORT & HOBBIES ==
@@ -136,8 +138,8 @@ RULES
 THE ECOSYSTEM (share the relevant link when useful)
 - Portfolio (parcours, projets, stack, experiences): https://portfolio.badreddineek.com
 - Services freelance (apps data, IA, automatisation, web): https://services.badreddineek.com
-- Labs (interactive explainers on ML and AI, in English): https://labs.badreddineek.com
-- Latest publication (Canicule 2026 heatwave analysis, on LinkedIn): https://www.linkedin.com/feed/update/urn:li:activity:7496137802007404544/
+- Labs (interactive explainers on ML and AI, plus data investigations like the school inequality one): https://labs.badreddineek.com
+- Latest publication (school inequality data investigation, article + LinkedIn): https://labs.badreddineek.com/rentree-2026/
 - Nidham (productivity tool): https://nidham.fr
 - GitHub: https://github.com/BadreddineEK
 - LinkedIn: Badreddine EL KHAMLICHI
