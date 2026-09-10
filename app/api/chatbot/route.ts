@@ -102,9 +102,13 @@ In progress / ideas:
 - Always experimenting with new data engineering and LLM tooling
 
 == LATEST PUBLICATIONS (LinkedIn) ==
-- School inequality investigation — "Does the French school still reduce inequality?": a rigorous data investigation from public data only (DEPP, INSEE). This is my most recent post, and the first Lab in this series. Article: https://labs.badreddineek.com/rentree-2026/ — Post: https://www.linkedin.com/feed/update/urn:li:activity:7497973126664847361/
-- Canicule 2026 (heatwave) — perception vs reality: two data apps (France since 1950 + Lyon urban heat island) with a carousel. Link: https://www.linkedin.com/feed/update/urn:li:activity:7496137802007404544/
-- World Cup 2026 — do the stats predict the winner? Data analysis on the ongoing tournament. Link: https://www.linkedin.com/feed/update/urn:li:activity:7484890826721107968/
+- Recession 2026 — "Is France really in recession?": Insee GDP revision, simplified Bry-Boschan cycle detection, European comparison, public debt and deficit in context. Article: https://labs.badreddineek.com/recession-2026/ — Post: https://www.linkedin.com/feed/update/urn:li:ugcPost:7501205300134191104/
+- Gradient descent — visual explanation of how a model reduces error and learns. Lab: https://labs.badreddineek.com/how-a-model-learns/ — Post: https://www.linkedin.com/feed/update/urn:li:ugcPost:7501206546471837697/
+- LLM temperature parameter — how temperature affects creativity, diversity and consistency in language-model outputs. Post: https://www.linkedin.com/feed/update/urn:li:ugcPost:7500912941479911425/
+- Water stress 2026 — groundwater, network leaks, water uses and how effort is shared, using public data. Article: https://labs.badreddineek.com/stress-hydrique-2026/ — Post: https://www.linkedin.com/feed/update/urn:li:ugcPost:7500470213356744704/
+- School inequality investigation — "Does the French school still reduce inequality?": public DEPP/INSEE data. Article: https://labs.badreddineek.com/rentree-2026/ — Post: https://www.linkedin.com/feed/update/urn:li:ugcPost:7497973125599399936/
+- Canicule 2026 (heatwave) — perception vs reality: two data apps (France since 1950 + Lyon urban heat island) with a carousel. Post: https://www.linkedin.com/feed/update/urn:li:ugcPost:7496137800870727681/
+- World Cup 2026 — do the stats predict the winner? Data analysis on real tournament data. Post: https://www.linkedin.com/feed/update/urn:li:ugcPost:7484890825701666816/
 
 == SPORT & HOBBIES ==
 - Distance running: 10km in 40 minutes (proud of this!), completed a marathon, also does trail running and semi-marathon
@@ -139,7 +143,7 @@ THE ECOSYSTEM (share the relevant link when useful)
 - Portfolio (parcours, projets, stack, experiences): https://portfolio.badreddineek.com
 - Services freelance (apps data, IA, automatisation, web): https://services.badreddineek.com
 - Labs (interactive explainers on ML and AI, plus data investigations like the school inequality one): https://labs.badreddineek.com
-- Latest publication (school inequality data investigation, article + LinkedIn): https://labs.badreddineek.com/rentree-2026/
+- Latest data investigation (Recession 2026, article + LinkedIn): https://labs.badreddineek.com/recession-2026/
 - Nidham (productivity tool): https://nidham.fr
 - GitHub: https://github.com/BadreddineEK
 - LinkedIn: Badreddine EL KHAMLICHI
