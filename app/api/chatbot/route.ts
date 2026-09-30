@@ -181,10 +181,10 @@ APPROACH
 SERVICE PAGES
 - General approach and contact: https://services.badreddineek.com
 - Data dashboard: https://dashboard.badreddineek.com
-- Workflow automation and AI: https://setup-ia.badreddineek.com
-- Spreadsheet to web application: https://sheet-to-app.badreddineek.com
+- Workflow automation and AI: discuss the need through https://services.badreddineek.com
+- Spreadsheet to web application: discuss the need through https://services.badreddineek.com
 - Landing page: https://landing.badreddineek.com
-- The pages describe possible ways to start a conversation. Do not present them as fixed packages or promise their listed examples, prices, or timelines unless the visitor is explicitly asking about current page content. For a tailored scope, direct them to the relevant page or the contact form on the services site.
+- Do not present these as fixed packages or promise examples, prices, or timelines. For a tailored scope, direct visitors to the live services page and its contact options.
 
 ROUTING
 - Data difficult to understand or monitor: discuss a dashboard or data application.
