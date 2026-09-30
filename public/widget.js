@@ -23,6 +23,20 @@
 
   var MODE = (SCRIPT && SCRIPT.getAttribute('data-bek-mode')) || 'portfolio';
   var THEME_OVERRIDE = (SCRIPT && SCRIPT.getAttribute('data-bek-theme')) || 'auto';
+  var CURRENT_LANG = document.documentElement.getAttribute('data-lang') === 'en' ? 'en' : 'fr';
+
+  var UI_TEXT = {
+    fr: {
+      open: 'Ouvrir le chat avec Badreddine', assistant: 'Assistant IA', close: 'Fermer',
+      placeholder: 'Ecris ton message...', message: 'Message', send: 'Envoyer',
+      footer: 'Propulse par IA, les reponses peuvent contenir des erreurs', you: 'Toi'
+    },
+    en: {
+      open: 'Open chat with Badreddine', assistant: 'AI assistant', close: 'Close',
+      placeholder: 'Type your message...', message: 'Message', send: 'Send',
+      footer: 'AI-powered; replies may contain errors', you: 'You'
+    }
+  };
 
   // Per-context welcome message and suggestion chips.
   var PRESETS = {
@@ -54,7 +68,41 @@
       ]
     }
   };
-  var PRESET = PRESETS[MODE] || PRESETS.portfolio;
+  var PRESETS_EN = {
+    portfolio: {
+      welcome: "Hi, I'm Badreddine's AI assistant. Ask me about my background, projects or tech stack, in French or English.",
+      chips: [
+        { label: 'My background', value: 'Tell me about your background' },
+        { label: 'My projects', value: 'What projects have you built?' },
+        { label: 'My tech stack', value: 'What is your tech stack?' },
+        { label: 'Contact me', value: 'How can I contact you?' }
+      ]
+    },
+    hub: {
+      welcome: "Welcome. I'm Badreddine's assistant. I can point you to the portfolio, services or Labs, or answer your questions. What are you looking for?",
+      chips: [
+        { label: 'Explore the portfolio', value: 'Show me Badreddine\'s portfolio' },
+        { label: 'Services', value: 'What services does Badreddine offer?' },
+        { label: 'The Labs', value: 'What are the Labs?' },
+        { label: 'Contact Badreddine', value: 'How can I contact Badreddine?' }
+      ]
+    },
+    services: {
+      welcome: "Hi. I can explain Badreddine's services (data apps, AI, automation and web) and help scope your needs. What are you looking for?",
+      chips: [
+        { label: 'Sheet to App', value: 'Explain the Sheet to App service' },
+        { label: 'AI automation', value: 'How does the AI automation setup work?' },
+        { label: 'Dashboard', value: 'I need a dashboard for my data' },
+        { label: 'Request a quote', value: 'How can I request a quote?' }
+      ]
+    }
+  };
+  function getPreset() {
+    var presets = CURRENT_LANG === 'en' ? PRESETS_EN : PRESETS;
+    return presets[MODE] || presets.portfolio;
+  }
+  var PRESET = getPreset();
+  var UI = UI_TEXT[CURRENT_LANG];
 
   // ── Styles ──────────────────────────────────────────────────────────────
   var css = [
@@ -170,25 +218,26 @@
   document.head.appendChild(style);
 
   var root = el('div', 'bek-chat');
+  root.setAttribute('lang', CURRENT_LANG);
   root.setAttribute('data-bek-theme', detectTheme());
 
   var fab = el('button', 'bek-fab');
-  fab.setAttribute('aria-label', 'Ouvrir le chat avec Badreddine');
+  fab.setAttribute('aria-label', UI.open);
   fab.innerHTML =
     '<svg class="bek-fab-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 8.5 8.5z"/></svg>' +
     '<svg class="bek-fab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 
   var panel = el('div', 'bek-panel');
   panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', 'Assistant Badreddine');
+  panel.setAttribute('aria-label', CURRENT_LANG === 'fr' ? 'Assistant Badreddine' : 'Badreddine assistant');
 
   var head = el('div', 'bek-head');
   head.innerHTML =
     '<div class="bek-avatar">BEK</div>' +
     '<div class="bek-head-meta"><span class="bek-head-name">Badreddine</span>' +
-    '<span class="bek-head-sub"><span class="bek-dot"></span>Assistant IA</span></div>';
+    '<span class="bek-head-sub"><span class="bek-dot"></span>' + UI.assistant + '</span></div>';
   var headX = el('button', 'bek-head-x');
-  headX.setAttribute('aria-label', 'Fermer');
+  headX.setAttribute('aria-label', UI.close);
   headX.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   head.appendChild(headX);
 
@@ -198,15 +247,15 @@
   var inputWrap = el('div', 'bek-input');
   var textarea = el('textarea');
   textarea.setAttribute('rows', '1');
-  textarea.setAttribute('placeholder', 'Ecris ton message...');
-  textarea.setAttribute('aria-label', 'Message');
+  textarea.setAttribute('placeholder', UI.placeholder);
+  textarea.setAttribute('aria-label', UI.message);
   var sendBtn = el('button', 'bek-send');
-  sendBtn.setAttribute('aria-label', 'Envoyer');
+  sendBtn.setAttribute('aria-label', UI.send);
   sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>';
   inputWrap.appendChild(textarea);
   inputWrap.appendChild(sendBtn);
 
-  var foot = el('div', 'bek-foot', 'Propulse par IA, les reponses peuvent contenir des erreurs');
+  var foot = el('div', 'bek-foot', UI.footer);
 
   panel.appendChild(head);
   panel.appendChild(msgs);
@@ -227,7 +276,7 @@
 
   function addRow(from) {
     var row = el('div', 'bek-row ' + (from === 'user' ? 'bek-user' : 'bek-bot'));
-    var avatar = el('div', 'bek-mini-avatar', from === 'user' ? 'Toi' : 'BEK');
+    var avatar = el('div', 'bek-mini-avatar', from === 'user' ? UI.you : 'BEK');
     var bubble = el('div', 'bek-bubble');
     row.appendChild(avatar);
     row.appendChild(bubble);
@@ -243,6 +292,30 @@
       b.addEventListener('click', function () { send(c.value); });
       chipsWrap.appendChild(b);
     });
+  }
+
+  function syncLanguage() {
+    var nextLang = document.documentElement.getAttribute('data-lang') === 'en' ? 'en' : 'fr';
+    if (nextLang === CURRENT_LANG) return;
+    CURRENT_LANG = nextLang;
+    UI = UI_TEXT[CURRENT_LANG];
+    PRESET = getPreset();
+    root.setAttribute('lang', CURRENT_LANG);
+    fab.setAttribute('aria-label', UI.open);
+    panel.setAttribute('aria-label', CURRENT_LANG === 'fr' ? 'Assistant Badreddine' : 'Badreddine assistant');
+    head.querySelector('.bek-head-sub').innerHTML = '<span class="bek-dot"></span>' + UI.assistant;
+    headX.setAttribute('aria-label', UI.close);
+    textarea.setAttribute('placeholder', UI.placeholder);
+    textarea.setAttribute('aria-label', UI.message);
+    sendBtn.setAttribute('aria-label', UI.send);
+    foot.textContent = UI.footer;
+    if (!msgs.querySelector('.bek-user')) {
+      msgs.innerHTML = '';
+      botBubble(PRESET.welcome);
+      showChips(PRESET.chips);
+    } else if (chipsWrap.children.length) {
+      showChips(PRESET.chips);
+    }
   }
 
   function botBubble(text) {
@@ -295,7 +368,9 @@
       }
       return pump();
     }).catch(function () {
-      bubble.innerHTML = renderMarkdown("Desole, je n'arrive pas a repondre la tout de suite. Tu peux reessayer, ou ecrire directement a Badreddine sur LinkedIn.");
+      bubble.innerHTML = renderMarkdown(CURRENT_LANG === 'fr'
+        ? "Desole, je n'arrive pas a repondre la tout de suite. Tu peux reessayer, ou ecrire directement a Badreddine sur LinkedIn."
+        : "Sorry, I can't answer right now. Please try again or contact Badreddine on LinkedIn.");
       finish();
     });
 
@@ -307,7 +382,7 @@
         history.push({ role: 'user', content: text });
         history.push({ role: 'assistant', content: full });
       }
-      bubble.innerHTML = renderMarkdown(full || "Hmm, pas de reponse. Reessaie ?");
+      bubble.innerHTML = renderMarkdown(full || (CURRENT_LANG === 'fr' ? "Hmm, pas de reponse. Reessaie ?" : "No response yet. Please try again."));
       scrollDown();
       textarea.focus();
     }
@@ -340,7 +415,8 @@
   // React to host theme switching
   new MutationObserver(function () {
     root.setAttribute('data-bek-theme', detectTheme());
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    syncLanguage();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-lang'] });
 
   // Seed conversation
   botBubble(PRESET.welcome);
