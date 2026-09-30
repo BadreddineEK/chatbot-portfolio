@@ -59,12 +59,12 @@
       ]
     },
     services: {
-      welcome: "Salut. Je peux t'expliquer les prestations de Badreddine (apps data, IA, automatisation, web) et t'aider a cadrer ton besoin. Qu'est-ce qui t'amene ?",
+      welcome: "Salut. On peut partir d'un besoin concret et voir si la data, l'automatisation, l'IA ou une application pourrait aider. Qu'est-ce que tu aimerais améliorer ?",
       chips: [
-        { label: 'Sheet to App', value: 'Explique-moi le service Sheet to App' },
-        { label: 'Automatisation IA', value: 'Comment fonctionne le setup IA et automatisation ?' },
-        { label: 'Dashboard', value: 'Je veux un dashboard pour mes donnees' },
-        { label: 'Demander un devis', value: 'Comment demander un devis ?' }
+        { label: 'Automatiser un processus', value: "J'aimerais simplifier un processus de travail" },
+        { label: 'Explorer une piste IA', value: "J'ai un cas d'usage IA en tête" },
+        { label: 'Mieux suivre mes données', value: "J'aimerais mieux suivre ou comprendre mes données" },
+        { label: 'Parler de mon besoin', value: 'Comment présenter mon besoin ?' }
       ]
     }
   };
@@ -88,12 +88,12 @@
       ]
     },
     services: {
-      welcome: "Hi. I can explain Badreddine's services (data apps, AI, automation and web) and help scope your needs. What are you looking for?",
+      welcome: "Hi. Start with a real work problem, and we can explore whether data, automation, AI or an application could help. What would you like to improve?",
       chips: [
-        { label: 'Sheet to App', value: 'Explain the Sheet to App service' },
-        { label: 'AI automation', value: 'How does the AI automation setup work?' },
-        { label: 'Dashboard', value: 'I need a dashboard for my data' },
-        { label: 'Request a quote', value: 'How can I request a quote?' }
+        { label: 'Automate a process', value: 'I would like to simplify a work process' },
+        { label: 'Explore an AI idea', value: 'I have an AI use case in mind' },
+        { label: 'Understand my data', value: 'I would like to understand or track my data better' },
+        { label: 'Discuss my needs', value: 'How should I describe what I need?' }
       ]
     }
   };
